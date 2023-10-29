@@ -18,20 +18,26 @@ receiver(UserName) ->
 
             % allow reply from the current user
             io:format("~s", [UserName]),
-            Reply = io:get_line(": "),
+            ReplyInput = io:get_line(": "),
+            % removes \n
+            Reply = string:strip(ReplyInput, both, $\n),
 
             % send reply to the other user
-            Sender_Pid ! {Reply, UserName, self()};
+            Sender_Pid ! {Reply, UserName},
+            receiver(UserName);
 
         {Message, UserName2, Sender_Pid} ->
             % receiver will print on the terminal the message it received
             io:format("~s: ~s~n", [UserName2, Message]),
 
             % get reply from the current user when it received a message:
-            Reply = io:get_line("~s: ", [UserName]),
+            io:format("~s", [UserName]),
+            ReplyInput = io:get_line(": "),
+            % removes \n
+            Reply = string:strip(ReplyInput, both, $\n),
 
             % send reply and current user to the sender
-            Sender_Pid ! {Reply, UserName, self()},
+            Sender_Pid ! {Reply, UserName},
             receiver(UserName)
     end.
 
@@ -58,12 +64,14 @@ sendMessage(Message, UserName2, ReceiverNode) ->
 
     % check if there are replies from the receiver
     receive
-        {Reply, UserName, ReceiverNode} ->
-            io:format("received a reply!~n"),
+        {Reply, UserName} ->
             io:format("~s: ~s~n", [UserName, Reply])
     end,
 
     % after getting a reply from the receiver, get user input to send another message
     io:format("~s", [UserName2]),
-    NewMessage = io:get_line(": "),
+    NewMessageInput = io:get_line(": "),
+    % removes \n
+    NewMessage = string:strip(NewMessageInput, both, $\n),
+
     sendMessage(NewMessage, UserName2, ReceiverNode).
