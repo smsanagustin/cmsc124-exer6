@@ -10,8 +10,15 @@ init_chat() ->
 receiver(UserName) ->
     receive
         % when user receives bye, chat will be terminated
-        bye ->
-            io:format("You partner has disconnected!~n");
+        {"bye", UserName2, Sender_Pid} ->
+            UserName2 = UserName2,
+            Sender_Pid = Sender_Pid,
+            io:format("You partner has disconnected!~n"),
+
+            % also end process of the sender
+            Sender_Pid ! bye,
+
+            halt();
 
         {"", UserName2, Sender_Pid} ->
             io:format("You are now connected to ~s.~n", [UserName2]),
@@ -52,10 +59,10 @@ init_chat2(ReceiverNode) ->
     spawn(chat, sendMessage, ["", UserName2, ReceiverNode]).
 
 % if sender sends a "bye" message, bye will be sent to receiver; chat will end
-sendMessage("bye", UserName2, ReceiverNode) ->
-    UserName2 = UserName2,
-    {receiver, ReceiverNode} ! bye,
-    io:format("ok");
+% sendMessage("bye", UserName2, ReceiverNode) ->
+%     UserName2 = UserName2,
+%     {receiver, ReceiverNode} ! bye,
+%     io:format("ok");
 
 % used to send message to the other user
 sendMessage(Message, UserName2, ReceiverNode) ->
@@ -64,6 +71,17 @@ sendMessage(Message, UserName2, ReceiverNode) ->
 
     % check if there are replies from the receiver
     receive
+        bye ->
+            halt();
+        
+        {"bye", UserName} ->
+            UserName = UserName,
+            io:format("Your partner has disconnected.~n"),
+
+            % send a bye reply to the receiver as well
+            {receiver, ReceiverNode} ! {"bye", UserName2, self()},
+
+            halt();
         {Reply, UserName} ->
             io:format("~s: ~s~n", [UserName, Reply])
     end,
