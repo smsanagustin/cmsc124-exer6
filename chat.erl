@@ -30,7 +30,6 @@ receiver(UserName) ->
 
             % also end process of the sender
             Sender_Pid ! bye,
-
             halt();
 
         {"", UserName2, Sender_Pid} ->
@@ -76,8 +75,8 @@ sendMessage(Message, UserName2, ReceiverNode) ->
 
             % send a bye reply to the receiver as well
             {receiver, ReceiverNode} ! {"bye", UserName2, self()},
-
             halt();
+        
         {Reply, UserName} ->
             io:format("~s: ~s~n", [UserName, Reply])
     end,
