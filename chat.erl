@@ -1,5 +1,5 @@
 -module(chat).
--export([init_chat/0, init_chat2/1, receiver1/1, receiver2/2, sendMessage1/2, sendMessage2/2]).
+-export([init_chat/0, init_chat2/1, receiver1/1, receiver2/2, sendMessage1/2, sendMessage2/3]).
 
 % initializes current node (host node)
 init_chat() ->
@@ -24,20 +24,22 @@ init_chat2(ReceiverNode) ->
     {receiver1, ReceiverNode} ! {connected, UserName2, Receiver2_Pid},
 
     % send an empty string initially to connect two nodes
-    spawn(chat, sendMessage2, [UserName2, ReceiverNode]).
+    spawn(chat, sendMessage2, [UserName2, ReceiverNode, Receiver2_Pid]).
+
 
 % called when host is initialized using init_chat
 % watches for incoming messages to the host
 receiver1(UserName) ->
     receive
+        bye ->
+            halt();
         % when user receives bye, chat will be terminated
-        {"bye", UserName2, Sender_Pid} ->
+        {"bye", UserName2, Receiver2_Pid} ->
             UserName2 = UserName2,
-            Sender_Pid = Sender_Pid,
-            io:format("You partner has disconnected!~n"),
+            io:format("~nYou have disconnected!~n"),
 
             % also end process of the sender
-            Sender_Pid ! bye,
+            Receiver2_Pid ! bye,
 
             halt();
 
@@ -47,13 +49,8 @@ receiver1(UserName) ->
             % UserName is the host's while Receiver2_Pid is the client's
             spawn(chat, sendMessage1, [UserName, Receiver2_Pid]);
 
-        % {"", UserName2, Receiver2_Pid} ->
-        %     io:format("You are now connected to ~s.~n", [UserName2]),
-            % % spawn new process to allow host to send messages
-            % % UserName is the host's while Receiver2_Pid is the client's
-            % spawn(chat, sendMessage1, [UserName, Receiver2_Pid]);
-
-        {Message, UserName2} ->
+        {Message, UserName2, Receiver2_Pid} ->
+            Receiver2_Pid = Receiver2_Pid,
             % receiver will print on the terminal the message it received
             io:format("~s: ~s~n", [UserName2, Message])
     end,
@@ -68,15 +65,17 @@ receiver2(UserName2, ReceiverNode) ->
         % used to halt process when the other user receives "bye"
         % see line 19 to understand what this code is for
         bye ->
+            % ReceiverNode ! bye,
             halt();
 
         % halts process when this process itself receives "bye"
         {"bye", UserName} ->
             UserName = UserName,
-            io:format("Your partner has disconnected.~n"),
+            io:format("~s: bye~n", [UserName]),
+            io:format("~nYour partner has disconnected.~n"),
 
             % send a bye reply to the receiver as well
-            {receiver, ReceiverNode} ! {"bye", UserName2, self()},
+            {receiver1, ReceiverNode} ! {"bye", UserName2, self()},
 
             halt();
 
@@ -89,8 +88,9 @@ receiver2(UserName2, ReceiverNode) ->
 
 % used to send message to the client from the host
 sendMessage1(UserName, Receiver2_Pid) ->
-    io:format("~s", [UserName]),
-    ReplyInput = io:get_line(": "),
+    % io:format("~s", [UserName]),
+    Prompt = UserName ++ ": ",
+    ReplyInput = io:get_line(Prompt),
     % removes \n
     Reply = string:strip(ReplyInput, both, $\n),
 
@@ -101,15 +101,21 @@ sendMessage1(UserName, Receiver2_Pid) ->
     sendMessage1(UserName, Receiver2_Pid).
 
 % used to send message to the host/receiver1
-sendMessage2(UserName2, ReceiverNode) ->
+sendMessage2(UserName2, ReceiverNode, Receiver2_Pid) ->
     % get user's input 
-    io:format("~s", [UserName2]),
-    NewMessageInput = io:get_line(": "),
+    io:format(""),
+    io:format(""),
+    io:format(""),
+    %io:format(":"),
+
+    Prompt = UserName2 ++ ": ",
+    NewMessageInput = io:get_line(Prompt),
+    
     % removes \n
     NewMessage = string:strip(NewMessageInput, both, $\n),
 
     % send message to client/receiver1
-    ReceiverNode ! {NewMessage, UserName2},
+    {receiver1, ReceiverNode} ! {NewMessage, UserName2, Receiver2_Pid},
 
     % call this function recusrively to ask for another message
-    sendMessage2(UserName2, ReceiverNode).
+    sendMessage2(UserName2, ReceiverNode, Receiver2_Pid).
