@@ -23,7 +23,7 @@ init_chat2(ReceiverNode) ->
     net_adm:ping(ReceiverNode),
     {receiver1, ReceiverNode} ! {connected, UserName2, Receiver2_Pid},
 
-    % send an empty string initially to connect two nodes
+    % allows client to send messages
     spawn(chat, sendMessage2, [UserName2, ReceiverNode, Receiver2_Pid]).
 
 
