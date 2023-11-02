@@ -32,11 +32,12 @@ init_chat2(ReceiverNode) ->
 receiver1(UserName) ->
     receive
         bye ->
+            io:format("~nYou have disconnected!~n"),
             halt();
         % when user receives bye, chat will be terminated
         {"bye", UserName2, Receiver2_Pid} ->
             UserName2 = UserName2,
-            io:format("~nYou have disconnected!~n"),
+            io:format("~nYour partner has disconnected!~n"),
 
             % also end process of the sender
             Receiver2_Pid ! bye,
@@ -66,16 +67,17 @@ receiver2(UserName2, ReceiverNode) ->
         % see line 19 to understand what this code is for
         bye ->
             % ReceiverNode ! bye,
+            io:format("~nYou have disconnected!~n"),
             halt();
 
         % halts process when this process itself receives "bye"
         {"bye", UserName} ->
             UserName = UserName,
             io:format("~s: bye~n", [UserName]),
-            io:format("~nYour partner has disconnected.~n"),
+            io:format("~nYour partner has disconnected!~n"),
 
             % send a bye reply to the receiver as well
-            {receiver1, ReceiverNode} ! {"bye", UserName2, self()},
+            {receiver1, ReceiverNode} ! bye,
 
             halt();
 
