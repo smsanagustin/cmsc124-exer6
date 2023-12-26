@@ -1,5 +1,5 @@
-# cmsc124-exer6
-private repo for the exercise 6 in cmsc 124 (design of programming languages)
+# erlang chat app
+A simple chat program that allows two terminals to communicate with each other. Implemented using Erlang.
 
 # how to run 
 ### on 2 separate terminals, run this:
